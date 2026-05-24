@@ -585,15 +585,15 @@ const StatCard = ({ icon: Icon, label, value, tone = 'cyan', detail }) => {
   };
 
   return (
-    <div className="group rounded-lg border border-white/10 bg-white/[0.055] p-3 shadow-glow backdrop-blur transition hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.075] sm:p-4">
-      <div className="mb-3 flex items-center justify-between gap-3">
-        <div className={`grid h-9 w-9 place-items-center rounded-lg border ${tones[tone]}`}>
-          <Icon size={18} />
+    <div className="group rounded-lg border border-white/10 bg-white/[0.045] p-3 shadow-lg shadow-black/10 backdrop-blur transition hover:border-white/20 hover:bg-white/[0.065]">
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <div className={`grid h-8 w-8 place-items-center rounded-lg border ${tones[tone]}`}>
+          <Icon size={16} />
         </div>
-        {detail ? <span className="text-xs text-slate-400">{detail}</span> : null}
+        {detail ? <span className="truncate text-[11px] text-slate-400">{detail}</span> : null}
       </div>
-      <p className="text-xs text-slate-400 sm:text-sm">{label}</p>
-      <p className="mt-1 text-xl font-semibold text-white sm:text-2xl">{value}</p>
+      <p className="text-xs text-slate-400">{label}</p>
+      <p className="mt-0.5 text-2xl font-semibold text-white">{value}</p>
     </div>
   );
 };
@@ -629,18 +629,20 @@ const QuickAction = ({ icon: Icon, label, detail, onClick, tone = 'cyan' }) => {
 
   return (
     <button
-      className={`group flex min-h-[86px] items-center justify-between gap-3 rounded-lg border bg-gradient-to-br p-3 text-left transition hover:-translate-y-0.5 hover:bg-white/[0.08] ${tones[tone]}`}
+      className={`group flex min-h-[66px] items-center justify-between gap-3 rounded-lg border bg-slate-950/35 p-3 text-left transition hover:border-white/20 hover:bg-white/[0.06] ${tones[tone]}`}
       onClick={onClick}
       type="button"
     >
-      <span className="min-w-0">
-        <span className="grid h-9 w-9 place-items-center rounded-lg border border-white/10 bg-slate-950/40">
-          <Icon size={18} />
+      <span className="flex min-w-0 items-center gap-3">
+        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-white/10 bg-slate-950/40">
+          <Icon size={16} />
         </span>
-        <span className="mt-3 block text-sm font-semibold text-white">{label}</span>
-        {detail ? <span className="mt-0.5 block text-xs text-slate-400">{detail}</span> : null}
+        <span className="min-w-0">
+          <span className="block truncate text-sm font-semibold text-white">{label}</span>
+          {detail ? <span className="mt-0.5 block truncate text-xs text-slate-400">{detail}</span> : null}
+        </span>
       </span>
-      <ArrowRight size={17} className="shrink-0 text-slate-500 transition group-hover:translate-x-0.5 group-hover:text-white" />
+      <ArrowRight size={15} className="shrink-0 text-slate-500 transition group-hover:text-white" />
     </button>
   );
 };
@@ -1216,12 +1218,9 @@ function App() {
       const today = toISODate(new Date());
       const choices = [
         { label: 'Задача', icon: CheckSquare, onClick: () => openTaskQuickAdd({ dueDate: today, priority: 'Важно' }) },
-        { label: 'Событие', icon: CalendarPlus, onClick: () => openCalendarQuickAdd({ day: today, type: 'Фокус', title: 'Фокус-сессия' }) },
-        { label: 'Доход', icon: Banknote, onClick: () => openTransactionQuickAdd({ type: 'income', category: 'Доход', date: today }) },
         { label: 'Расход', icon: WalletCards, onClick: () => openTransactionQuickAdd({ type: 'expense', category: 'Расход', date: today }) },
+        { label: 'Доход', icon: Banknote, onClick: () => openTransactionQuickAdd({ type: 'income', category: 'Доход', date: today }) },
         { label: 'Метрика рекламы', icon: TrendingUp, onClick: openMetricQuickAdd },
-        { label: 'Тренировка / здоровье', icon: HeartPulse, onClick: () => setQuickModal('health') },
-        { label: 'Цели и лимиты', icon: Gauge, onClick: openSettings },
       ];
 
       return (
@@ -1589,6 +1588,7 @@ function App() {
     const today = toISODate(new Date());
     const todayMeta = week.find((day) => day.date === today);
     const priorityRank = { Срочно: 0, Высокий: 0, Важно: 1, Средний: 1, Обычно: 2, Низкий: 2 };
+    const todayAllTasks = data.tasks.filter((task) => task.dueDate === today);
     const todayTasks = data.tasks
       .filter((task) => task.dueDate === today && task.status !== 'done')
       .sort((a, b) => (priorityRank[a.priority] ?? 2) - (priorityRank[b.priority] ?? 2))
@@ -1606,122 +1606,106 @@ function App() {
     const monthIncome = monthTransactions.filter((item) => item.type === 'income').reduce((sum, item) => sum + numberValue(item.amount), 0);
     const monthExpenses = monthTransactions.filter((item) => item.type === 'expense').reduce((sum, item) => sum + numberValue(item.amount), 0);
     const activeProjects = data.projects.filter((project) => project.status === 'Активен' || project.status === 'Тест');
-    const attentionProjects = data.projects.filter((project) => project.status === 'Требует внимания');
     const todayHealth = data.health.find((item) => item.date === today) || makeHealthDay(today, 0);
     const settings = { ...emptySettings(), ...(data.settings || {}) };
     const overdueTasks = data.tasks.filter((task) => task.status !== 'done' && task.dueDate < today);
     const doneToday = data.tasks.filter((task) => task.dueDate === today && task.status === 'done').length;
     const nextBlock = nearestBlocks[0];
     const dailyAllowance = Math.max(0, numberValue(settings.monthlyExpenseLimit) - monthExpenses) / daysLeftInMonth();
-    const incomeProgress = Math.min(100, (monthIncome / Math.max(1, numberValue(settings.monthlyIncomeGoal))) * 100);
     const expenseProgress = Math.min(100, (monthExpenses / Math.max(1, numberValue(settings.monthlyExpenseLimit))) * 100);
+    const targetCpl = numberValue(settings.targetCpl);
+    const highCplProjects = activeProjects.filter((project) => {
+      const metrics = calculateProjectMetrics(project);
+      return metrics.cpl > targetCpl && numberValue(project.leads) > 0;
+    });
+    const adSpent = activeProjects.reduce((sum, project) => sum + numberValue(project.spent || project.budget), 0);
+    const adLeads = activeProjects.reduce((sum, project) => sum + numberValue(project.leads), 0);
+    const avgCpl = adLeads ? adSpent / adLeads : 0;
+    const avgPayback = activeProjects.length
+      ? activeProjects.reduce((sum, project) => sum + calculateAdPayback(project, settings).romi, 0) / activeProjects.length
+      : 0;
+    const noTodayTasks = todayAllTasks.length === 0;
+    const lowEnergy = numberValue(todayHealth.energy) > 0 && numberValue(todayHealth.energy) <= 4;
     const needsAttention = [
-      ...data.tasks
-        .filter((task) => task.status !== 'done' && (task.priority === 'Срочно' || task.priority === 'Высокий' || task.dueDate < today))
-        .slice(0, 2)
-        .map((task) => `Задача: ${task.title}`),
-      ...attentionProjects.slice(0, 2).map((project) => `Реклама: ${project.name}`),
-      totals.balance < 0 ? 'Финансы: остаток ниже нуля' : null,
-      numberValue(todayHealth.stress) >= 7 ? 'Здоровье: высокий стресс сегодня' : null,
-      numberValue(todayHealth.sleep) > 0 && numberValue(todayHealth.sleep) < 6 ? 'Здоровье: мало сна' : null,
+      ...overdueTasks.slice(0, 2).map((task) => `Просрочено: ${task.title}`),
+      ...highCplProjects.slice(0, 2).map((project) => `CPL выше цели: ${project.name}`),
+      expenseProgress >= 85 ? `Расходы близко к лимиту: ${expenseProgress.toFixed(0)}%` : null,
+      lowEnergy ? `Низкая энергия: ${todayHealth.energy}/10` : null,
+      noTodayTasks ? 'Нет задач на сегодня' : null,
     ].filter(Boolean);
-    const aiInsights = [
-      totals.tasksOpen > 0 ? `Сначала закрой одну важную задачу. Открыто: ${totals.tasksOpen}.` : 'Открытых задач нет. Добавь один главный результат дня.',
-      monthExpenses > monthIncome * 0.45 ? 'Расходы месяца уже заметные. Проверь рекламу и обязательные траты.' : 'Финансы в рабочем коридоре. Следи за дневным расходом.',
-      totals.avgStress >= 6 ? 'Стресс выше комфортного уровня. Добавь короткое восстановление.' : 'Энергия и стресс управляемые. Держи фокус на сне и 1-2 задачах.',
-    ];
+    const financeTone = expenseProgress >= 85 ? 'text-rose-100' : monthIncome >= monthExpenses ? 'text-emerald-100' : 'text-amber-100';
+    const financeStatus = expenseProgress >= 85 ? 'Лимит близко' : monthIncome >= monthExpenses ? 'В плюсе' : 'Следи за расходами';
+    const adStatus = highCplProjects.length ? 'Нужен разбор CPL' : activeProjects.length ? 'В рабочем режиме' : 'Нет активных проектов';
 
     return (
-      <div className="grid gap-5">
-        <section className="rounded-lg border border-white/10 bg-white/[0.055] p-4 shadow-glow backdrop-blur sm:p-5">
-          <div className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-center">
+      <div className="grid gap-4 sm:gap-5">
+        <section className="rounded-lg border border-white/10 bg-white/[0.045] p-3 shadow-lg shadow-black/10 backdrop-blur sm:p-4">
+          <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-center">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-100/70">Сегодня</p>
-              <h2 className="mt-1 text-2xl font-semibold leading-tight text-white sm:text-3xl">Что делать сейчас</h2>
-              <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-slate-300">
-                <span className="rounded-lg border border-white/10 bg-white/[0.05] px-3 py-1.5">{todayMeta ? `${todayMeta.label} · ${todayMeta.short}` : today}</span>
-                <span className="rounded-lg border border-white/10 bg-white/[0.05] px-3 py-1.5">Остаток: {money(totals.balance)}</span>
-                <span className="rounded-lg border border-white/10 bg-white/[0.05] px-3 py-1.5">ROMI: {totals.avgRomi}%</span>
+              <h2 className="mt-1 text-2xl font-semibold leading-tight text-white sm:text-3xl">Что делать сегодня</h2>
+              <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-300 sm:text-sm">
+                <span className="rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-1.5">{todayMeta ? `${todayMeta.label} · ${todayMeta.short}` : today}</span>
+                <span className="rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-1.5">Баланс: {money(totals.balance)}</span>
+                <span className="rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-1.5">Проблем: {needsAttention.length}</span>
               </div>
             </div>
             <ActionButton icon={Plus} onClick={() => setQuickModal('choose')}>Добавить</ActionButton>
           </div>
         </section>
 
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <StatCard icon={CheckSquare} label="Открытые задачи" value={totals.tasksOpen} detail={`${totals.tasksDone} готово`} />
-          <StatCard icon={Clock3} label="Ближайшие блоки" value={nearestBlocks.length} tone="cyan" detail="на 7 дней" />
-          <StatCard icon={CircleDollarSign} label="Месяц" value={money(monthIncome - monthExpenses)} tone={monthIncome >= monthExpenses ? 'emerald' : 'rose'} />
-          <StatCard icon={Activity} label="Энергия / стресс" value={`${todayHealth.energy || 0} / ${todayHealth.stress || 0}`} tone="amber" />
-        </div>
+        <section className={`rounded-lg border p-3 shadow-lg shadow-black/10 backdrop-blur sm:p-4 ${needsAttention.length ? 'border-amber-300/20 bg-amber-300/[0.055]' : 'border-emerald-300/15 bg-emerald-300/[0.045]'}`}>
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <h3 className="flex items-center gap-2 text-base font-semibold text-white">
+              <Zap size={17} className={needsAttention.length ? 'text-amber-200' : 'text-emerald-200'} />
+              Требует внимания
+            </h3>
+            <span className="rounded-lg border border-white/10 bg-slate-950/45 px-2 py-1 text-xs text-slate-300">{needsAttention.length || '0'}</span>
+          </div>
+          <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+            {needsAttention.length ? (
+              needsAttention.map((item) => (
+                <div key={item} className="rounded-lg border border-white/10 bg-slate-950/55 px-3 py-2 text-sm text-slate-200">{item}</div>
+              ))
+            ) : (
+              <div className="rounded-lg border border-white/10 bg-slate-950/45 px-3 py-2 text-sm text-slate-300">Критичных сигналов нет.</div>
+            )}
+          </div>
+        </section>
 
-        <div className="grid gap-5 xl:grid-cols-[1fr_0.9fr]">
-          <section className="rounded-lg border border-cyan-300/15 bg-cyan-300/[0.045] p-4 shadow-glow backdrop-blur">
-            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-100/70">План дня</p>
-                <h3 className="mt-1 text-lg font-semibold text-white">{todayTasks[0]?.title || 'Выбери главный фокус'}</h3>
-              </div>
-              <ActionButton icon={Plus} onClick={() => openTaskQuickAdd({ dueDate: today, priority: 'Срочно' })} variant="soft">
+        <div className="grid gap-4 xl:grid-cols-[1fr_0.82fr]">
+          <section className="rounded-lg border border-white/10 bg-white/[0.045] p-3 shadow-lg shadow-black/10 backdrop-blur sm:p-4">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <h3 className="text-base font-semibold text-white">3 главные задачи</h3>
+              <button
+                className="inline-flex items-center gap-2 rounded-lg border border-white/10 px-3 py-1.5 text-sm text-slate-200 transition hover:bg-white/10"
+                onClick={() => openTaskQuickAdd({ dueDate: today, priority: 'Срочно' })}
+                type="button"
+              >
+                <Plus size={15} />
                 Фокус
-              </ActionButton>
-            </div>
-            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-              <div className="rounded-lg border border-white/10 bg-slate-950/55 p-3">
-                <p className="text-xs text-slate-500">Сегодня задач</p>
-                <p className="mt-1 text-lg font-semibold text-white">{todayOpenCount + doneToday}</p>
-              </div>
-              <div className="rounded-lg border border-white/10 bg-slate-950/55 p-3">
-                <p className="text-xs text-slate-500">Сделано</p>
-                <p className="mt-1 text-lg font-semibold text-emerald-100">{doneToday}</p>
-              </div>
-              <div className="rounded-lg border border-white/10 bg-slate-950/55 p-3">
-                <p className="text-xs text-slate-500">Просрочено</p>
-                <p className={`mt-1 text-lg font-semibold ${overdueTasks.length ? 'text-rose-100' : 'text-white'}`}>{overdueTasks.length}</p>
-              </div>
-              <div className="rounded-lg border border-white/10 bg-slate-950/55 p-3">
-                <p className="text-xs text-slate-500">Следующий блок</p>
-                <p className="mt-1 truncate text-sm font-semibold text-white">{nextBlock ? `${nextBlock.start} · ${nextBlock.title}` : 'Свободно'}</p>
-              </div>
-            </div>
-          </section>
-
-          <section className="rounded-lg border border-white/10 bg-white/[0.055] p-4 shadow-glow backdrop-blur">
-            <div className="mb-4 flex items-start justify-between gap-3">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-100/70">План месяца</p>
-                <h3 className="mt-1 text-lg font-semibold text-white">Доход, лимит и дневной коридор</h3>
-              </div>
-              <button className="rounded-lg border border-white/10 px-3 py-2 text-sm text-slate-200 transition hover:bg-white/10" onClick={openSettings} type="button">
-                Настроить
               </button>
             </div>
-            <div className="grid gap-3">
-              <div>
-                <div className="mb-1 flex justify-between text-xs text-slate-400"><span>Доход</span><span>{money(monthIncome)} / {money(settings.monthlyIncomeGoal)}</span></div>
-                <div className="h-2 overflow-hidden rounded-lg bg-white/10"><div className="h-full rounded-lg bg-emerald-300" style={{ width: `${incomeProgress}%` }} /></div>
+            <div className="mb-3 grid grid-cols-3 gap-2">
+              <div className="rounded-lg border border-white/10 bg-slate-950/45 p-2">
+                <p className="text-[11px] text-slate-500">Открыто</p>
+                <p className="text-xl font-semibold text-white">{todayOpenCount}</p>
               </div>
-              <div>
-                <div className="mb-1 flex justify-between text-xs text-slate-400"><span>Расходы</span><span>{money(monthExpenses)} / {money(settings.monthlyExpenseLimit)}</span></div>
-                <div className="h-2 overflow-hidden rounded-lg bg-white/10"><div className={`h-full rounded-lg ${expenseProgress > 85 ? 'bg-rose-300' : 'bg-cyan-300'}`} style={{ width: `${expenseProgress}%` }} /></div>
+              <div className="rounded-lg border border-white/10 bg-slate-950/45 p-2">
+                <p className="text-[11px] text-slate-500">Сделано</p>
+                <p className="text-xl font-semibold text-emerald-100">{doneToday}</p>
               </div>
-              <div className="rounded-lg border border-white/10 bg-slate-950/55 p-3 text-sm">
-                <span className="text-slate-400">Можно тратить в день до конца месяца: </span>
-                <span className="font-semibold text-white">{money(dailyAllowance)}</span>
+              <div className="rounded-lg border border-white/10 bg-slate-950/45 p-2">
+                <p className="text-[11px] text-slate-500">Просрочено</p>
+                <p className={`text-xl font-semibold ${overdueTasks.length ? 'text-rose-100' : 'text-white'}`}>{overdueTasks.length}</p>
               </div>
             </div>
-          </section>
-        </div>
-
-        <div className="grid gap-5 xl:grid-cols-[1fr_0.85fr]">
-          <section className="rounded-lg border border-white/10 bg-white/[0.055] p-4 shadow-glow backdrop-blur">
-            <h3 className="mb-3 text-base font-semibold text-white">3 главные задачи</h3>
-            <div className="grid gap-2">
+            <div className="grid gap-3">
               {todayTasks.length ? (
                 todayTasks.map((task) => (
                   <button
                     key={task.id}
-                    className="flex items-center justify-between gap-3 rounded-lg border border-white/10 bg-slate-950/55 p-3 text-left transition hover:-translate-y-0.5 hover:border-cyan-200/30 hover:bg-slate-950/80"
+                    className="flex items-center justify-between gap-3 rounded-lg border border-white/10 bg-slate-950/55 px-3 py-2.5 text-left transition hover:border-cyan-200/30 hover:bg-slate-950/80"
                     onClick={() => editTask(task)}
                     type="button"
                   >
@@ -1743,12 +1727,15 @@ function App() {
             </div>
           </section>
 
-          <section className="rounded-lg border border-white/10 bg-white/[0.055] p-4 shadow-glow backdrop-blur">
-            <h3 className="mb-3 text-base font-semibold text-white">Ближайшие блоки</h3>
+          <section className="rounded-lg border border-white/10 bg-white/[0.045] p-3 shadow-lg shadow-black/10 backdrop-blur sm:p-4">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <h3 className="text-base font-semibold text-white">Ближайшие события</h3>
+              <span className="rounded-lg border border-white/10 bg-slate-950/45 px-2 py-1 text-xs text-slate-400">{nextBlock ? `${nextBlock.start}` : 'свободно'}</span>
+            </div>
             <div className="grid gap-2">
               {nearestBlocks.length ? (
                 nearestBlocks.map((block) => (
-                  <div key={block.id} className="rounded-lg border border-white/10 bg-slate-950/55 p-3">
+                  <div key={block.id} className="rounded-lg border border-white/10 bg-slate-950/55 px-3 py-2.5">
                     <div className="flex items-center justify-between gap-3">
                       <p className="truncate text-sm font-medium text-white">{block.title}</p>
                       <span className="text-xs text-slate-400">{block.start}</span>
@@ -1760,68 +1747,67 @@ function App() {
                   </div>
                 ))
               ) : (
-                <EmptyState icon={CalendarPlus} title="Блоков пока нет" text="Добавь событие через общий плюс." />
+                <EmptyState icon={CalendarPlus} title="Блоков пока нет" text="Добавь событие в разделе Календарь." />
               )}
             </div>
           </section>
         </div>
 
-        <div className="grid gap-5 xl:grid-cols-3">
-          <section className="rounded-lg border border-white/10 bg-white/[0.055] p-4 shadow-glow backdrop-blur">
-            <h3 className="mb-3 text-base font-semibold text-white">Финансы</h3>
+        <div className="grid gap-4 xl:grid-cols-[0.85fr_0.85fr_1fr]">
+          <section className="rounded-lg border border-white/10 bg-white/[0.045] p-3 shadow-lg shadow-black/10 backdrop-blur sm:p-4">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <h3 className="text-base font-semibold text-white">Финансы</h3>
+              <span className={`rounded-lg border border-white/10 bg-slate-950/45 px-2 py-1 text-xs ${financeTone}`}>{financeStatus}</span>
+            </div>
             <div className="grid gap-2 text-sm">
-              <div className="flex justify-between rounded-lg border border-white/10 bg-slate-950/55 p-3">
+              <div className="flex justify-between rounded-lg border border-white/10 bg-slate-950/55 px-3 py-2.5">
                 <span className="text-slate-400">Сегодня</span>
-                <span className={todayIncome >= todayExpenses ? 'text-emerald-200' : 'text-rose-200'}>{money(todayIncome - todayExpenses)}</span>
+                <span className="font-semibold text-white">{money(todayIncome - todayExpenses)}</span>
               </div>
-              <div className="flex justify-between rounded-lg border border-white/10 bg-slate-950/55 p-3">
+              <div className="flex justify-between rounded-lg border border-white/10 bg-slate-950/55 px-3 py-2.5">
                 <span className="text-slate-400">Месяц</span>
-                <span className={monthIncome >= monthExpenses ? 'text-emerald-200' : 'text-rose-200'}>{money(monthIncome - monthExpenses)}</span>
+                <span className="font-semibold text-white">{money(monthIncome - monthExpenses)}</span>
+              </div>
+              <div className="rounded-lg border border-white/10 bg-slate-950/55 px-3 py-2.5">
+                <div className="mb-1 flex justify-between text-xs text-slate-400"><span>Расходы</span><span>{expenseProgress.toFixed(0)}%</span></div>
+                <div className="h-1.5 overflow-hidden rounded-lg bg-white/10"><div className={`h-full rounded-lg ${expenseProgress >= 85 ? 'bg-rose-300' : 'bg-cyan-300'}`} style={{ width: `${expenseProgress}%` }} /></div>
+                <p className="mt-2 text-xs text-slate-400">В день: <span className="font-semibold text-white">{money(dailyAllowance)}</span></p>
               </div>
             </div>
           </section>
 
-          <section className="rounded-lg border border-white/10 bg-white/[0.055] p-4 shadow-glow backdrop-blur">
-            <h3 className="mb-3 text-base font-semibold text-white">Реклама</h3>
+          <section className="rounded-lg border border-white/10 bg-white/[0.045] p-3 shadow-lg shadow-black/10 backdrop-blur sm:p-4">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <h3 className="text-base font-semibold text-white">Реклама</h3>
+              <span className={`rounded-lg border border-white/10 bg-slate-950/45 px-2 py-1 text-xs ${highCplProjects.length ? 'text-amber-100' : 'text-emerald-100'}`}>{adStatus}</span>
+            </div>
             <div className="grid grid-cols-2 gap-2">
-              <div className="rounded-lg border border-white/10 bg-slate-950/55 p-3">
+              <div className="rounded-lg border border-white/10 bg-slate-950/55 p-2.5">
                 <p className="text-xs text-slate-500">Активно</p>
-                <p className="mt-1 text-lg font-semibold text-white">{activeProjects.length}</p>
+                <p className="text-xl font-semibold text-white">{activeProjects.length}</p>
               </div>
-              <div className="rounded-lg border border-white/10 bg-slate-950/55 p-3">
+              <div className="rounded-lg border border-white/10 bg-slate-950/55 p-2.5">
                 <p className="text-xs text-slate-500">Лиды</p>
-                <p className="mt-1 text-lg font-semibold text-white">{totals.leads}</p>
+                <p className="text-xl font-semibold text-white">{adLeads}</p>
               </div>
-              <div className="col-span-2 rounded-lg border border-white/10 bg-slate-950/55 p-3">
-                <p className="text-xs text-slate-500">Бюджет</p>
-                <p className="mt-1 text-sm font-semibold text-white">{money(totals.projectBudget)}</p>
+              <div className="rounded-lg border border-white/10 bg-slate-950/55 p-2.5">
+                <p className="text-xs text-slate-500">CPL</p>
+                <p className="text-sm font-semibold text-white">{metricMoney(avgCpl)}</p>
+              </div>
+              <div className="rounded-lg border border-white/10 bg-slate-950/55 p-2.5">
+                <p className="text-xs text-slate-500">ROMI</p>
+                <p className={`text-sm font-semibold ${avgPayback >= 0 ? 'text-emerald-100' : 'text-rose-100'}`}>{percent(avgPayback)}</p>
               </div>
             </div>
           </section>
 
-          <section className="rounded-lg border border-white/10 bg-white/[0.055] p-4 shadow-glow backdrop-blur">
-            <h3 className="mb-3 text-base font-semibold text-white">Здоровье</h3>
-            <div className="grid grid-cols-2 gap-2 text-sm">
-              <div className="rounded-lg border border-white/10 bg-slate-950/55 p-3"><p className="text-xs text-slate-500">Сон</p><p className="mt-1 font-semibold text-white">{todayHealth.sleep || 0} ч</p></div>
-              <div className="rounded-lg border border-white/10 bg-slate-950/55 p-3"><p className="text-xs text-slate-500">Вес</p><p className="mt-1 font-semibold text-white">{todayHealth.weight || 0} кг</p></div>
-              <div className="rounded-lg border border-white/10 bg-slate-950/55 p-3"><p className="text-xs text-slate-500">Тренировка</p><p className="mt-1 font-semibold text-white">{numberValue(todayHealth.workouts) > 0 ? 'Да' : 'Нет'}</p></div>
-              <div className="rounded-lg border border-white/10 bg-slate-950/55 p-3"><p className="text-xs text-slate-500">Энергия</p><p className="mt-1 font-semibold text-white">{todayHealth.energy || 0}/10</p></div>
-            </div>
-          </section>
-        </div>
-
-        <div className="grid gap-5 xl:grid-cols-[0.9fr_1.1fr]">
-          <section className="rounded-lg border border-amber-300/15 bg-amber-300/[0.055] p-4 shadow-glow backdrop-blur">
-            <h3 className="mb-3 flex items-center gap-2 text-base font-semibold text-white"><Zap size={17} className="text-amber-200" />Требует внимания</h3>
-            <div className="grid gap-2">
-              {needsAttention.length ? needsAttention.map((item) => <div key={item} className="rounded-lg border border-white/10 bg-slate-950/55 p-3 text-sm text-slate-200">{item}</div>) : <div className="rounded-lg border border-white/10 bg-slate-950/55 p-3 text-sm text-slate-400">Критичных сигналов нет.</div>}
-            </div>
-          </section>
-
-          <section className="rounded-lg border border-cyan-300/15 bg-cyan-300/[0.045] p-4 shadow-glow backdrop-blur">
-            <h3 className="mb-3 flex items-center gap-2 text-base font-semibold text-white"><Sparkles size={17} className="text-cyan-100" />AI Insights</h3>
-            <div className="grid gap-2 md:grid-cols-3">
-              {aiInsights.map((insight) => <div key={insight} className="rounded-lg border border-white/10 bg-slate-950/45 p-3 text-sm text-slate-300">{insight}</div>)}
+          <section className="rounded-lg border border-white/10 bg-white/[0.045] p-3 shadow-lg shadow-black/10 backdrop-blur sm:p-4">
+            <h3 className="mb-3 text-base font-semibold text-white">Быстро добавить</h3>
+            <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-1">
+              <QuickAction icon={CheckSquare} label="Задача" detail="главный фокус" onClick={() => openTaskQuickAdd({ dueDate: today, priority: 'Важно' })} />
+              <QuickAction icon={WalletCards} label="Расход" detail="записать трату" onClick={() => openTransactionQuickAdd({ type: 'expense', category: 'Расход', date: today })} tone="amber" />
+              <QuickAction icon={Banknote} label="Доход" detail="записать приход" onClick={() => openTransactionQuickAdd({ type: 'income', category: 'Доход', date: today })} tone="emerald" />
+              <QuickAction icon={TrendingUp} label="Метрика рекламы" detail="обновить CPL/лиды" onClick={openMetricQuickAdd} tone="violet" />
             </div>
           </section>
         </div>
@@ -2553,7 +2539,7 @@ function App() {
     <div className="min-h-screen bg-[linear-gradient(180deg,#07090f_0%,#0a111d_45%,#07090f_100%)] text-slate-100">
       <div className="pointer-events-none fixed inset-0 bg-[linear-gradient(rgba(255,255,255,0.025)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.025)_1px,transparent_1px)] bg-[size:48px_48px] opacity-40" />
       <div className="mx-auto flex min-h-screen w-full max-w-[1500px] flex-col lg:flex-row">
-        <header className="sticky top-0 z-30 flex items-center justify-between border-b border-white/10 bg-[#0b1018]/95 px-4 py-3 shadow-2xl shadow-black/20 backdrop-blur lg:hidden">
+        <header className="sticky top-0 z-30 flex items-center justify-between border-b border-white/10 bg-[#0b1018]/95 px-3 py-2.5 shadow-lg shadow-black/20 backdrop-blur sm:px-4 sm:py-3 lg:hidden">
           <div className="flex items-center gap-3">
             <div className="grid h-9 w-9 place-items-center rounded-lg border border-cyan-300/30 bg-cyan-300/10 text-cyan-100">
               <Activity size={19} />
@@ -2564,7 +2550,7 @@ function App() {
             </div>
           </div>
           <button
-            className="grid h-10 w-10 place-items-center rounded-lg bg-cyan-300 text-slate-950 shadow-glow"
+            className="grid h-10 w-10 place-items-center rounded-lg bg-cyan-300 text-slate-950 shadow-lg shadow-cyan-950/20"
             onClick={() => setQuickModal('choose')}
             type="button"
             aria-label="Быстро добавить"
@@ -2637,9 +2623,9 @@ function App() {
           </div>
         </aside>
 
-        <main className="relative z-10 flex-1 px-4 pb-28 pt-5 sm:px-6 lg:px-8 lg:py-8">{renderContent()}</main>
+        <main className="relative z-10 flex-1 px-3 pb-24 pt-4 sm:px-6 sm:pb-28 lg:px-8 lg:py-8">{renderContent()}</main>
       </div>
-      <nav className="fixed bottom-0 left-0 right-0 z-30 border-t border-white/10 bg-[#0b1018]/95 px-2 pb-3 pt-2 shadow-2xl shadow-black/30 backdrop-blur lg:hidden">
+      <nav className="fixed bottom-0 left-0 right-0 z-30 border-t border-white/10 bg-[#0b1018]/95 px-1.5 pb-2.5 pt-1.5 shadow-lg shadow-black/30 backdrop-blur lg:hidden">
         <div className="grid grid-cols-6 gap-1">
           {navItems.map((item) => {
             const Icon = item.icon;
@@ -2648,7 +2634,7 @@ function App() {
             return (
               <button
                 key={item.id}
-                className={`grid min-h-[54px] place-items-center rounded-lg text-[10px] font-medium transition ${
+                className={`grid min-h-[50px] place-items-center rounded-lg text-[10px] font-medium transition ${
                   selected ? 'bg-cyan-300/[0.12] text-cyan-100' : 'text-slate-500 hover:bg-white/[0.05] hover:text-slate-200'
                 }`}
                 onClick={() => setActiveSection(item.id)}
