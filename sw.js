@@ -1,4 +1,4 @@
-const CACHE_NAME = 'life-control-dashboard-pwa-v3';
+const CACHE_NAME = 'life-control-dashboard-pwa-v4';
 
 const APP_SHELL = [
   './',
@@ -18,7 +18,16 @@ self.addEventListener('install', (event) => {
       const indexHtml = await indexResponse.clone().text();
       await cache.put('./index.html', indexResponse);
       const assetUrls = [...indexHtml.matchAll(/(?:src|href)="(\.\/assets\/[^"]+)"/g)].map((match) => match[1]);
-      await cache.addAll([...new Set(assetUrls)]);
+      await Promise.all(
+        [...new Set(assetUrls)].map(async (url) => {
+          try {
+            const response = await fetch(url);
+            if (response.ok) await cache.put(url, response);
+          } catch {
+            // Runtime cache will fill this later when the network is available.
+          }
+        }),
+      );
       self.skipWaiting();
     })(),
   );
