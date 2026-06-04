@@ -1,4 +1,4 @@
-const CACHE_NAME = 'life-control-dashboard-pwa-v1';
+const CACHE_NAME = 'life-control-dashboard-pwa-v2';
 
 const APP_SHELL = [
   './',
@@ -25,8 +25,8 @@ self.addEventListener('install', (event) => {
       await Promise.all(
         CDN_ASSETS.map(async (url) => {
           try {
-            const response = await fetch(url, { mode: 'no-cors' });
-            await cache.put(url, response);
+            const response = await fetch(url);
+            if (response.ok) await cache.put(url, response);
           } catch {
             // Runtime cache will fill this later when the network is available.
           }
@@ -57,8 +57,10 @@ self.addEventListener('fetch', (event) => {
 
       try {
         const response = await fetch(event.request);
-        const cache = await caches.open(CACHE_NAME);
-        await cache.put(event.request, response.clone());
+        if (response.ok || response.type === 'opaque') {
+          const cache = await caches.open(CACHE_NAME);
+          await cache.put(event.request, response.clone());
+        }
         return response;
       } catch {
         if (event.request.mode === 'navigate') {
