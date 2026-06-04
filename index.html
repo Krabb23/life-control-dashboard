@@ -128,6 +128,7 @@ import {
 } from 'https://esm.sh/lucide-react@0.468.0?deps=react@18.3.1';
 
 const STORAGE_KEY = 'life-control-dashboard-v1';
+const DATA_VERSION = 1;
 
 const ruDay = new Intl.DateTimeFormat('ru-RU', { weekday: 'short' });
 const ruShortDate = new Intl.DateTimeFormat('ru-RU', { day: '2-digit', month: 'short' });
@@ -356,6 +357,33 @@ const makeDefaultData = () => {
     },
     health: week.map((day, index) => makeHealthDay(day.date, index)),
     settings: emptySettings(),
+  };
+};
+
+const normalizeData = (input, week) => {
+  const parsed = input?.data && typeof input.data === 'object' ? input.data : input;
+  const base = makeDefaultData();
+  const existingHealth = Array.isArray(parsed?.health) ? parsed.health : [];
+  const health = week.map((day, index) => {
+    const found = existingHealth.find((item) => item.date === day.date);
+    return found || makeHealthDay(day.date, index);
+  });
+
+  return {
+    ...base,
+    ...(parsed || {}),
+    tasks: Array.isArray(parsed?.tasks) ? parsed.tasks : base.tasks,
+    calendar: Array.isArray(parsed?.calendar) ? parsed.calendar : base.calendar,
+    projects: Array.isArray(parsed?.projects) ? parsed.projects : base.projects,
+    finance: {
+      transactions: Array.isArray(parsed?.finance?.transactions) ? parsed.finance.transactions : [],
+      goals: Array.isArray(parsed?.finance?.goals) ? parsed.finance.goals : [],
+    },
+    settings: {
+      ...emptySettings(),
+      ...(parsed?.settings || {}),
+    },
+    health,
   };
 };
 
@@ -681,26 +709,7 @@ function App() {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (!saved) return makeDefaultData();
-      const parsed = JSON.parse(saved);
-      const existingHealth = Array.isArray(parsed.health) ? parsed.health : [];
-      const health = week.map((day, index) => {
-        const found = existingHealth.find((item) => item.date === day.date);
-        return found || makeHealthDay(day.date, index);
-      });
-
-      return {
-        ...makeDefaultData(),
-        ...parsed,
-        finance: {
-          transactions: parsed.finance?.transactions || [],
-          goals: parsed.finance?.goals || [],
-        },
-        settings: {
-          ...emptySettings(),
-          ...(parsed.settings || {}),
-        },
-        health,
-      };
+      return normalizeData(JSON.parse(saved), week);
     } catch {
       return makeDefaultData();
     }
@@ -728,7 +737,11 @@ function App() {
   const importInputRef = useRef(null);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    } catch {
+      setFeedback('Не удалось сохранить данные локально');
+    }
   }, [data]);
 
   useEffect(() => {
@@ -782,7 +795,12 @@ function App() {
 
   const exportDataJson = (isBackup = false) => {
     const date = toISODate(new Date());
-    downloadTextFile(JSON.stringify(data, null, 2), `life-control-${isBackup ? 'backup' : 'export'}-${date}.json`);
+    const payload = {
+      version: DATA_VERSION,
+      exportedAt: new Date().toISOString(),
+      data,
+    };
+    downloadTextFile(JSON.stringify(payload, null, 2), `life-control-${isBackup ? 'backup' : 'export'}-${date}.json`);
     setFeedback(isBackup ? 'Резервная копия создана' : 'Данные экспортированы');
   };
 
@@ -792,20 +810,8 @@ function App() {
 
     try {
       const parsed = JSON.parse(await file.text());
-      const base = makeDefaultData();
-      setData({
-        ...base,
-        ...parsed,
-        finance: {
-          transactions: parsed.finance?.transactions || [],
-          goals: parsed.finance?.goals || [],
-        },
-        settings: {
-          ...emptySettings(),
-          ...(parsed.settings || {}),
-        },
-        health: parsed.health?.length ? parsed.health : base.health,
-      });
+      setData(normalizeData(parsed, week));
+      setDeletedItem(null);
       setFeedback('Данные импортированы');
     } catch {
       setFeedback('Не удалось импортировать JSON');
