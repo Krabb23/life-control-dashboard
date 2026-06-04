@@ -1,4 +1,4 @@
-const CACHE_NAME = 'life-control-dashboard-pwa-v2';
+const CACHE_NAME = 'life-control-dashboard-pwa-v3';
 
 const APP_SHELL = [
   './',
@@ -9,29 +9,16 @@ const APP_SHELL = [
   './icons/icon-512.png',
 ];
 
-const CDN_ASSETS = [
-  'https://cdn.tailwindcss.com',
-  'https://unpkg.com/@babel/standalone@7.26.5/babel.min.js',
-  'https://esm.sh/react@18.3.1',
-  'https://esm.sh/react-dom@18.3.1/client',
-  'https://esm.sh/lucide-react@0.468.0?deps=react@18.3.1',
-];
-
 self.addEventListener('install', (event) => {
   event.waitUntil(
     (async () => {
       const cache = await caches.open(CACHE_NAME);
       await cache.addAll(APP_SHELL);
-      await Promise.all(
-        CDN_ASSETS.map(async (url) => {
-          try {
-            const response = await fetch(url);
-            if (response.ok) await cache.put(url, response);
-          } catch {
-            // Runtime cache will fill this later when the network is available.
-          }
-        }),
-      );
+      const indexResponse = await fetch('./index.html');
+      const indexHtml = await indexResponse.clone().text();
+      await cache.put('./index.html', indexResponse);
+      const assetUrls = [...indexHtml.matchAll(/(?:src|href)="(\.\/assets\/[^"]+)"/g)].map((match) => match[1]);
+      await cache.addAll([...new Set(assetUrls)]);
       self.skipWaiting();
     })(),
   );
