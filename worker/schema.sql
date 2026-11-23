@@ -1,0 +1,12 @@
+-- База Лайф Сити (Cloudflare D1)
+CREATE TABLE IF NOT EXISTS records (
+  tbl TEXT NOT NULL, id TEXT NOT NULL, data TEXT NOT NULL,
+  updated_at INTEGER NOT NULL, deleted INTEGER NOT NULL DEFAULT 0, rev INTEGER NOT NULL,
+  PRIMARY KEY (tbl, id)
+);
+CREATE INDEX IF NOT EXISTS records_rev ON records (rev);
+CREATE INDEX IF NOT EXISTS records_tbl ON records (tbl, deleted);
+CREATE TABLE IF NOT EXISTS push_subs (endpoint TEXT PRIMARY KEY, data TEXT NOT NULL, device TEXT, created INTEGER);
+CREATE TABLE IF NOT EXISTS push_log (key TEXT PRIMARY KEY, at INTEGER NOT NULL);
+CREATE TABLE IF NOT EXISTS files (id TEXT NOT NULL, part INTEGER NOT NULL, mime TEXT, data BLOB, PRIMARY KEY (id, part));
+CREATE TABLE IF NOT EXISTS meta (k TEXT PRIMARY KEY, v TEXT);

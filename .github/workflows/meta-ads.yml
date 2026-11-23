@@ -1,0 +1,18 @@
+name: meta-ads
+on:
+  schedule:
+    - cron: '30 4 * * *'   # 09:30 Алматы
+  workflow_dispatch:
+jobs:
+  pull:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: node scripts/meta-ads.mjs
+        env:
+          META_TOKEN: ${{ secrets.META_TOKEN }}
+          WORKER_URL: ${{ secrets.WORKER_URL }}
+          APP_TOKEN: ${{ secrets.APP_TOKEN }}

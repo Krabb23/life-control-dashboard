@@ -5,6 +5,8 @@ import { computeCity } from '../lib/game';
 import { addDays, today } from '../lib/dates';
 import { HabitForm } from './Add';
 import { go } from '../lib/nav';
+import { api, serverCfg } from '../lib/api';
+import { syncNow } from '../lib/sync';
 
 function Ten({ v, c, onPick }: { v?: number; c: string; onPick: (n: number) => void }) {
   return (
@@ -52,6 +54,8 @@ export function Habits() {
     const w = Number(weight.replace(',', '.'));
     if (w) for (const g of s.goals.filter(g => /вес/i.test(g.title))) await save('goals', { ...g, current: w, valueAt: Date.now() });
     toast(`День закрыт, +${reward} опыта Арене`);
+    // разбор дня в Обсерватории: сервер собирает его сразу после чек-ина
+    if (await serverCfg()) (async () => { await syncNow(); await api('/jobs/review', { kind: 'day' }); await syncNow(); })().catch(() => { /* вечером сделает расписание */ });
   };
 
   return (
