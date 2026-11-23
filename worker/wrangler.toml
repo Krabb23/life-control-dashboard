@@ -1,0 +1,30 @@
+name = "life-city"
+main = "src/index.ts"
+compatibility_date = "2024-12-01"
+
+# База: создаётся командой `npx wrangler d1 create life-city`, id вставить сюда
+[[d1_databases]]
+binding = "DB"
+database_name = "life-city"
+database_id = "REPLACE_WITH_D1_ID"
+
+# Файлы по умолчанию хранятся в D1 (бесплатно и без карты).
+# Если подключишь R2 (нужна карта в Cloudflare), раскомментируй:
+# [[r2_buckets]]
+# binding = "FILES"
+# bucket_name = "life-city-files"
+
+# Время в UTC: 05:00 = 10:00 Алматы, 17:00 = 22:00, воскресенье 15:00 = 20:00
+[triggers]
+crons = ["* * * * *", "0 5 * * *", "0 17 * * *", "0 15 * * SUN"]
+
+[vars]
+TZ_OFFSET_MIN = "300"
+MODEL_CHAT = "gemini-flash-lite-latest"
+MODEL_SMART = "gemini-flash-latest"
+MODEL_FALLBACK = "gemma-3-27b-it"
+MODEL_EMBED = "gemini-embedding-001"
+GH_REPO = "krabb23/life-control-dashboard"
+GH_WORKFLOW = "meta-ads.yml"
+APP_URL = ""
+# Секреты (wrangler secret put ...): APP_TOKEN, GEMINI_API_KEY, VAPID_PUBLIC, VAPID_PRIVATE, VAPID_SUBJECT, GH_TOKEN (необязательно)
